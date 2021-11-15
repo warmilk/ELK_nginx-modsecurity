@@ -1,0 +1,15 @@
+# 配置手册参阅：https://www.elastic.co/guide/en/beats/filebeat/current/configuring-howto-filebeat.html
+setup.ilm.enabled: false
+setup.template.overwrite: true
+setup.template.name: "modsecurity-"
+setup.template.pattern: "modsecurity-%{+YYYY.MM.dd}"
+
+filebeat.inputs:
+  - type: log
+    paths:
+      - /usr/share/filebeat/logs/20211112/20211112-1022/*
+
+output:
+  elasticsearch:
+    hosts: ["elk:9200"]
+    index: "modsecurity-%{+YYYY.MM.dd}"

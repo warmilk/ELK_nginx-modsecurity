@@ -1,0 +1,30 @@
+version: "3" #docker-compose的版本
+services:
+  waf:
+    image: owasp/modsecurity-crs:nginx # https://hub.docker.com/r/owasp/modsecurity-crs
+    build: . # 根据docker-compose.yml同一目录下/Modsecurity目录下的dockerfile对image作进一步构建
+    ports:
+      - "80:80"
+      - "443:443"
+    # environment的配置会放在/etc/modsecurity.d/modsecurity-override.conf然后覆盖默认配置，每次修改了environment里的配置，记得docker-compose up -d 重新构建一次容器
+    environment:
+      # nginx 相关，具体查阅 https://hub.docker.com/r/owasp/modsecurity Nginx ENV Variables
+      - PROXY=1 # 开启反向代理
+      - BACKEND=http://10.206.0.14:1003 #1003端口放的是要测试的漏洞环境，172.16.10.159是宿主机的局域网ip，不要写localhost
+      # modsecurity 相关，具体查阅 https://hub.docker.com/r/owasp/modsecurity ModSecurity  ENV Variables 以及教程 http://www.modsecurity.cn/practice/post/4.html
+      - MODSEC_AUDIT_ENGINE=on # 开启 SecAuditEngine日志记录，方便以后审计。开启这个的话，记住一定要确保指定的日志存放目录存在！！！并且目录的权限为chmod 777 ！！！
+      - MODSEC_AUDIT_LOG_TYPE=Concurrent # 并行记录日志（Concurrent并行会产生多个日志文件，Serial串行的话只有一个日志文件，推荐并行记录，因为会按照【年月日时分秒】作为日志文件名帮你把日志分开多个文件去存储）
+      - MODSEC_REQ_BODY_ACCESS=on #解析post请求的请求体
+      - MODSEC_RESP_BODY_ACCESS=on #解析post请求的响应体
+    volumes:
+      # 大部分 Docker 镜像都是基于 Alpine，Ubuntu，Debian，CentOS 等基础镜像制作而成。基本上都采用 UTC 时间，默认时区为零时区。而我们主要用的是 CST 时间，北京时间，位于东八区。时区代号： Asia/Shanghai，我的宿主机是centOS， 所以时区信息保存在了/usr/share/zoneinfo/Asia/Shanghai ，如果是ubantu或者别的Linux发行版，这个路径要修改下
+      - "/usr/share/zoneinfo/Asia/Shanghai:/etc/localtime:ro"
+      - "$PWD/../SHARE_LOG/:/var/log/modsecurity/audit/" # 把modsecurity的日志挂在宿主机上共享给filebeat
+      
+      # 更多配置需要自定义的话，可通过如下挂载卷的方式
+      # volumes:
+      #   # - "$PWD/nginx/public-html/index.html:/usr/share/nginx/html/index.html" # （宿主机：虚拟机）docker虚拟机内的文件存放路径，需要自行docker exec -it containerName bash 进去docker虚拟机内部寻找
+      #   - "$PWD/nginx/nginx.conf:/etc/nginx/nginx.conf" # 挂载我们自定义的nginx配置到owasp/modsecurity这个容器内
+      #   - "$PWD/nginx/default.conf:/etc/nginx/conf.d/default.conf" # 挂载我们自定义的nginx配置到owasp/modsecurity这个容器内
+      #   - "$PWD/modsecurity/cutsom-rules.conf:/etc/modsecurity.d/modsecurity-override.conf" # 挂载我们自己写的自定义规则
+      #   - "$PWD/modsecurity/modsecurity.conf:/etc/modsecurity.d/modsecurity.conf" # 挂载我们自己写的自定义的modsecurity配置

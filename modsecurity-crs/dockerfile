@@ -1,0 +1,20 @@
+FROM owasp/modsecurity-crs:nginx
+
+# 切换为root用户
+# USER root
+
+# SecAuditLog /dev/stdout
+RUN touch /dev/stdout 
+RUN chmod 777 /dev/stdout
+
+#SecAuditLogStorageDir /var/log/modsecurity/audit/
+RUN rm -rf /var/log/modsecurity/
+RUN mkdir /var/log/modsecurity/
+RUN mkdir /var/log/modsecurity/audit/
+RUN chmod 777 /var/log/modsecurity/audit/
+
+# SecDataDir /tmp/modsecurity/data
+
+
+
+

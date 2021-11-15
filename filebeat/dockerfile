@@ -1,0 +1,8 @@
+FROM elastic/filebeat:7.15.0
+
+# 切换为root用户
+USER root
+
+RUN chmod -R 777 /usr/share/filebeat/logs
+
+

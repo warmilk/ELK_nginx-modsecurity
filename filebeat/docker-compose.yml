@@ -1,0 +1,15 @@
+version: "3" #docker-compose的版本
+services:
+  filebeat:
+    container_name: filebeat
+    image: elastic/filebeat:7.15.0
+    build: .
+    volumes:
+      - "$PWD/filebeat.yml:/usr/share/filebeat/filebeat.yml"
+      - "$PWD/../SHARE_LOG/:/usr/share/filebeat/logs/"
+
+networks:
+  default:
+    external:
+      name: elknet #宿主机执行 $ sudo docker network create -d bridge elknet，然后docker network ls
+

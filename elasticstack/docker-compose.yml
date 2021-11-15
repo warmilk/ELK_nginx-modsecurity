@@ -1,0 +1,44 @@
+version: "3" #docker-compose的版本
+services:
+  elk:
+    container_name: elk
+    image: sebp/elk:7.15.0 # https://hub.docker.com/r/sebp/elk
+    ports:
+      - 5601:5601 # Kibana的webUI
+      - 9200:9200 # ElasticSearch的JSON接口，http:// your ip :9200/_search?pretty&size=1000
+      - 5044:5044 # LogStash Beats 接口（Filebeat是beats的六大工具之一） 
+      # - 9300:9300 # ElasticSearch transport interface
+      # - 9600:9600 # LogStash 的 Api 入口
+    environment:
+      # 参考：https://github.com/spujadas/elk-docker/blob/master/docs/index.md#prerequisites
+      # 如果启动不成功，报错：Native controller process has stopped - no new native processes can be started就给宿主机的vm分配大线程，具体做法是宿主机中执行 sudo sysctl -w vm.max_map_count=280530 
+      - LS_HEAP_SIZE=1g # 给LS分配1GB的内存，LS是logStash的缩写
+      - ES_HEAP_SIZE=2g # 给ES分配2GB的堆栈内存空间，ES是elasticSearch的缩写
+      - ES_JAVA_OPTS=-Xms2048m -Xmx2048m # JVM也就是java的虚拟机需要用到 https://techoverflow.net/2020/12/16/how-to-fix-elasticsearch-1-initial-heap-size-not-equal-to-maximum-heap-size/
+      - TZ=Asia/Shanghai #容器的时区
+      - KIBANA_START=1 #暂不启动kibana，因为要进去设置es的账号密码，设置完之后需要重启kibana
+      - LOGSTASH_START=0 #暂时用不上logstash对日志做过滤分析，只用filebeat收集es接收就足够了
+    volumes:
+      - "$PWD/Elasticsearch/elasticsearch.yml:/etc/elasticsearch/elasticsearch.yml"
+      - "$PWD/Kibana/kibana.yml:/opt/kibana/config/kibana.yml" # kibana配置文件在容器内的存放位置：/opt/kibana/config/kibana.yml，我加了一行 i18n.locale: zh-CN 让kibana界面变成了中文 漏网之鱼
+      - "$PWD/Logstash/logstash.conf:/etc/logstash/logstash.conf"
+
+    # 设置Kibana内置的账号密码，参考 https://www.elastic.co/guide/en/elasticsearch/reference/7.15/security-minimal-setup.html
+    # command:
+    #   - /bin/sh
+    #   - cd /opt/elasticsearch/bin
+    #   - ./elasticsearch-setup-passwords interactive
+    #   - 输入 y
+    #   - 输入6个密码总计12次
+    #   - cd ../../kibana/bin
+    #   - ./kibana-keystore create
+    #   - ./kibana-keystore add elasticsearch.password
+    #   - 输入一次elastic的密码
+    #   - ./kibana --allow-root
+    
+    # 记得docker-compose up 的时候不要加 -d (加了-d会切到后台运行) ，因为重量级的ELK的启动是个漫长的过程，不加-d，能在终端屏幕上看到它的启动实时日志，方便启动失败的时候查看前台屏幕日志排查原因
+
+networks:
+  default:
+    external:
+      name: elknet #宿主机执行 $ sudo docker network create -d bridge elknet，然后docker network ls

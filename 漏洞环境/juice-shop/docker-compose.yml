@@ -1,0 +1,6 @@
+version: "3" #docker-compose的版本
+services:
+  webapp:
+    image: bkimminich/juice-shop:latest
+    ports:
+      - "1003:3000" # 左边docker容器暴露给宿主机的端口：右边是具体服务暴露给docker容器的端口
