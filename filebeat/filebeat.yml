@@ -7,7 +7,7 @@ setup.template.pattern: "modsecurity-%{+YYYY.MM.dd}"
 filebeat.inputs:
   - type: log
     paths:
-      - /usr/share/filebeat/logs/20211112/20211112-1022/*
+      - /usr/share/filebeat/logs/*
 
 output:
   elasticsearch:
